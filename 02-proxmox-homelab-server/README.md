@@ -1,0 +1,48 @@
+# Phase 2: Repurposing a Laptop into a Hardened Proxmox VE Server
+
+![Architecture](architecture.png)
+
+## Objective
+Turn a spare laptop (Ryzen 5 5500U, 8 GB RAM, 256 GB NVMe) into a headless, secure, backed-up virtualization host. Manage it entirely from my main PC, and use it to run Linux lab containers.
+
+## Result
+| Area | Outcome | How it was verified |
+|---|---|---|
+| OS + hypervisor | Debian 13 minimal install, then **Proxmox VE 9.2** on top (Proxmox kernel only, GRUB cleaned) | `pveversion`, `uname -r`, dashboard login |
+| Storage | LVM thin pool (~171 GiB) for containers and VMs | `pvesm status` |
+| Networking | Private lab bridge `vmbr0` (10.10.10.0/24) with NAT out over Wi-Fi; containers are not reachable from the home LAN | container ping through NAT; `ip -br a` |
+| Access | Personal Proxmox admin account with **TOTP 2FA**; root kept for emergencies | login test |
+| Firewall | Proxmox datacenter firewall **on**, default inbound DROP; SSH (22) and web UI (8006) allowed only from my desktop | SSH and UI work from the desktop; container traffic unaffected |
+| SSH | **Key-only** login (ed25519 key with passphrase, ssh-agent); passwords disabled | `sshd -T` shows `passwordauthentication no`; password attempt returns `Permission denied (publickey)` |
+| Updates | Free no-subscription repository only; the paid repo that blocked upgrades (HTTP 401) was disabled | clean `apt update`, host + container fully patched |
+| Power | Runs headless with the lid closed (systemd-logind drop-in) | closed lid, SSH still answers |
+| Backups | Nightly `vzdump` of the lab container at 02:30, keep last 7 | job listed; first archive created |
+| Recovery | **Restore tested**: archive restored to a throwaway container, checked, removed | `pct restore` succeeded, config matched |
+| Off-host copy | Backup pulled to the desktop | SHA256 identical on both machines |
+| Lab container | Debian 13 LXC (unprivileged) running my [Linux System Health Monitor](https://github.com/Sleyk6/linux-system-health-monitor) with a repo-scoped GitHub deploy key | `ssh -T git@github.com`, commits pushed |
+
+## Skills practiced (CompTIA Linux+ / Security+ aligned)
+- Installation, partitioning (LVM), bootloader and kernel management (GRUB, `update-grub`)
+- Package management: APT sources (deb822), signing keys (keyring SHA256 check), forcing IPv4
+- systemd: services, `logind` drop-ins, `reload` vs `restart`
+- Networking: Linux bridges, IP forwarding, NAT (iptables MASQUERADE), static vs DHCP
+- Security: least privilege (sudo), MFA, host firewall allow-lists, SSH hardening, secrets hygiene
+- Virtualization: Proxmox LXC containers (`pct`, `pveam`), storage pools (`pvesm`)
+- Backup and recovery: `vzdump`, scheduled jobs, restore testing, integrity checks (SHA256)
+- Git: deploy keys, `.gitignore` for secrets, GitHub no-reply email for privacy
+
+## Troubleshooting stories
+1. **APT failing over IPv6.** The network had no working IPv6 route, so `apt` stalled. Fixed with `Acquire::ForceIPv4 "true";` in `/etc/apt/apt.conf.d/99force-ipv4`.
+2. **Updates silently blocked.** Installing Proxmox added the paid enterprise repository. Its `401 Unauthorized` made `apt update && apt full-upgrade` stop before upgrading. Disabled it in Node > Updates > Repositories (reversible) and re-ran cleanly.
+3. **"Key is invalid" on GitHub.** I'd pasted the key's *fingerprint* instead of the public key, and a screenshot had overwritten the clipboard. Fixed by copying the one-line `ssh-ed25519 ...` key directly.
+4. **Wrong-machine commands.** I ran Windows commands in the Linux shell and the reverse. Learned to read the prompt (`PS C:\>` vs `user@host:~$`) before running anything, and to label every command with where it runs.
+5. **Hardening without lockout.** I disabled SSH passwords while keeping the existing session open, tested a fresh key login, then confirmed passwords were refused. The rollback was ready the whole time.
+
+## Key commands
+See [build-steps.md](build-steps.md) for the full step-by-step build, including verification and rollback for each change.
+
+## Next
+- Ethernet adapter; move management off Wi-Fi
+- Monitoring container (Uptime Kuma or Netdata), Pi-hole on one test device, Tailscale for remote access (no open ports)
+
+> Documentation drafted with AI assistance from my own build log; every command was run and verified by me.
