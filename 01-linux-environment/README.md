@@ -17,14 +17,23 @@ Build and document a functional Linux environment while practicing core Linux sy
 - Troubleshooting
 
 ## Environment
-- Operating System:
-- Distribution:
-- Kernel:
-- Desktop Environment:
-- Virtualization Platform:
+| | |
+|---|---|
+| Operating System | Linux (GNU/Linux) |
+| Distribution | Debian GNU/Linux 13 (trixie) |
+| Kernel | 7.0.14-28-pve (shared with the Proxmox host) |
+| Shell | GNU Bash 5.2.37 |
+| Init system | systemd |
+| Desktop Environment | None (headless server) |
+| Virtualization Platform | Proxmox VE: LXC container `telemetry` (1 vCPU, 1 GiB RAM, 8 GB disk) |
+
+## Labs
+| # | Lab | Status |
+|---|---|---|
+| 1 | [System identification](01-linux-environment/system-identification.md) | ✅ Complete |
 
 ## Progress
-- [ ] Document system information
+- [x] Document system information
 - [ ] Configure hostname
 - [ ] Create users and groups
 - [ ] Practice file permissions
