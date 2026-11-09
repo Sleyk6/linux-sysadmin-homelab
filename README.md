@@ -4,4 +4,4 @@ Hands-on Linux systems administration lab covering configuration, networking, sy
 | Phase | Topic | Status |
 |---|---|---|
 | [01](01-linux-environment/) | Building and configuring a Linux environment | in progress |
-| [02](02-proxmox-homelab-server/) | Repurposing a laptop into a hardened Proxmox VE server | complete |
+| [02](02-proxmox-homelab-server/) | Repurposing a laptop into a hardened Proxmox VE server (wired, reboot-tested) | complete |

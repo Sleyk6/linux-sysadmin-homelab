@@ -29,7 +29,7 @@ sudo lvcreate -l 95%FREE --thinpool data <vg>
 sudo pvesm add lvmthin local-lvm --vgname <vg> --thinpool data --content rootdir,images
 ```
 
-## 5. Private lab network (NAT over Wi-Fi)
+## 5. Private lab network (NAT out of any uplink)
 `/etc/network/interfaces` (backup first):
 ```
 auto vmbr0
@@ -39,9 +39,10 @@ iface vmbr0 inet static
         bridge-stp off
         bridge-fd 0
         post-up   echo 1 > /proc/sys/net/ipv4/ip_forward
-        post-up   iptables -t nat -A POSTROUTING -s 10.10.10.0/24 -o <wifi-if> -j MASQUERADE
-        post-down iptables -t nat -D POSTROUTING -s 10.10.10.0/24 -o <wifi-if> -j MASQUERADE
+        post-up   iptables -t nat -A POSTROUTING -s 10.10.10.0/24 ! -o vmbr0 -j MASQUERADE
+        post-down iptables -t nat -D POSTROUTING -s 10.10.10.0/24 ! -o vmbr0 -j MASQUERADE
 ```
+`! -o vmbr0` = translate anything leaving the lab, whichever uplink (Wi-Fi or Ethernet) carries it. The first version used `-o <wifi-if>` and broke when Ethernet became the default route.
 
 ## 6. Accounts, MFA, firewall
 - `sudo` for the admin user; a personal Proxmox admin (`pveum`) with **TOTP**. Recovery codes stored offline.
@@ -80,3 +81,39 @@ sudo pct restore 399 /var/lib/vz/dump/<archive>.tar.zst --storage local-lvm --ho
 sudo pct destroy 399 --purge
 ```
 Desktop (PowerShell): `scp` the newest archive, then compare `sha256sum` on the server with `Get-FileHash` on Windows. They match.
+
+## 11. Wired uplink (USB gigabit Ethernet)
+- Identified the adapter (`ip -br link`, `ethtool`, driver `cdc_ncm`), confirmed link at 1000 Mb/s.
+- Read the router's DHCP range first, then chose a static address in a reserved range **outside** it, after an ARP check that it was free.
+
+`/etc/network/interfaces` (backup first; no `auto` line, the unit below brings it up):
+```
+iface vmbr1 inet static
+        address <lan-ip>/24
+        gateway <router-ip>
+        bridge-ports <usb-nic>
+        bridge-stp off
+        bridge-fd 0
+```
+`/etc/systemd/system/paddock-usb-eth.service`:
+```
+[Unit]
+Description=Bring up vmbr1 when the USB Ethernet adapter appears
+BindsTo=sys-subsystem-net-devices-<usb-nic>.device
+After=sys-subsystem-net-devices-<usb-nic>.device networking.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/ifup vmbr1
+
+[Install]
+WantedBy=sys-subsystem-net-devices-<usb-nic>.device
+```
+```bash
+sudo systemctl daemon-reload && sudo systemctl enable --now paddock-usb-eth
+```
+Verify: `systemctl status paddock-usb-eth` = active (exited), status=0/SUCCESS; `ip route` default via `vmbr1`; a full **reboot test** brings everything back with no manual steps. Desktop `~/.ssh/config` points `paddock` at the wired address and keeps a `paddock-wifi` alias as a fallback.
+Rollback: `sudo systemctl disable --now paddock-usb-eth`, restore the interfaces backup.
+
+> Never edit host networking in the Proxmox web UI *and* by hand: the UI saves `/etc/network/interfaces.new`, which replaces the real file at the next boot.
