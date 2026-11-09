@@ -48,4 +48,3 @@ See [build-steps.md](build-steps.md) for the full step-by-step build, including 
 ## Next
 - Monitoring container (Uptime Kuma or Netdata), Pi-hole on one test device, Tailscale for remote access (no open ports)
 
-> Documentation drafted with AI assistance from my own build log; every command was run and verified by me.
