@@ -4,7 +4,7 @@
 Identify the Linux system, user, hostname, kernel, distribution, and shell using basic command-line tools. Also identify how the system is virtualized and which init system is running.
 
 ## Environment
-- **Target:** `telemetry`, a Debian LXC container (CT 300) on the Proxmox VE server from [Phase 2](../../02-proxmox-homelab-server/README.md)
+- **Target:** `telemetry`, a Debian LXC container (CT 300) on the Proxmox VE server from [Phase 2](../02-proxmox-homelab-server/README.md)
 - **Access:** run from a Windows workstation over SSH. Nothing was modified; every command only reads information.
 
 ```powershell

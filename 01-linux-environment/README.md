@@ -30,7 +30,7 @@ Build and document a functional Linux environment while practicing core Linux sy
 ## Labs
 | # | Lab | Status |
 |---|---|---|
-| 1 | [System identification](01-linux-environment/system-identification.md) | ✅ Complete |
+| 1 | [System identification](system-identification.md) | ✅ Complete |
 
 ## Progress
 - [x] Document system information
