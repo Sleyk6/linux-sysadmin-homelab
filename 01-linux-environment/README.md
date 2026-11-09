@@ -31,11 +31,12 @@ Build and document a functional Linux environment while practicing core Linux sy
 | # | Lab | Status |
 |---|---|---|
 | 1 | [System identification](system-identification.md) | ✅ Complete |
+| 2 | [Users and groups](users-and-groups.md) | ✅ Complete |
 
 ## Progress
 - [x] Document system information
 - [ ] Configure hostname
-- [ ] Create users and groups
+- [x] Create users and groups
 - [ ] Practice file permissions
 - [ ] Inspect boot configuration
 - [ ] Manage systemd services
